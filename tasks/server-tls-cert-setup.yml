@@ -1,0 +1,125 @@
+---
+- name: Create certs directory base path
+  become: true
+  ansible.builtin.file:
+    path: "{{ minio_certs_dir | dirname }}"
+    state: directory
+    owner: "{{ minio_certs_dir_basedir_owner }}"
+    group: "{{ minio_group }}"
+    mode: "{{ minio_tls_directory_permissions }}"
+
+- name: Create certs directories
+  become: true
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ minio_certs_dir_owner }}"
+    group: "{{ minio_group }}"
+    mode: "{{ minio_tls_directory_permissions }}"
+  loop:
+    - "{{ minio_certs_dir }}"
+    - "{{ minio_certs_dir }}/CAs"
+
+- name: Create certs hostname subdirectories
+  become: true
+  ansible.builtin.file:
+    path: "{{ minio_certs_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ minio_certs_dir_owner }}"
+    group: "{{ minio_group }}"
+    mode: "{{ minio_tls_directory_permissions }}"
+  loop: "{{ minio_tls_hostnames }}"
+  when: minio_tls_hostnames | length > 0
+
+- name: Install fallback certificate and private key from variables
+  when:
+    - minio_tls_public_cert | length > 0
+    - minio_tls_private_key | length > 0
+  block:
+    - name: Install certificate file to certs dir
+      become: true
+      ansible.builtin.copy:
+        content: "{{ item }}"
+        dest: "{{ minio_certs_dir }}/public.crt"
+        mode: "{{ minio_tls_file_permissions }}"
+        owner: "{{ minio_certs_owner }}"
+        group: "{{ minio_group }}"
+      loop:
+        - "{{ minio_tls_public_cert }}"
+    - name: Install certificate private key to certs dir
+      no_log: true
+      become: true
+      ansible.builtin.copy:
+        content: "{{ item }}"
+        dest: "{{ minio_certs_dir }}/private.key"
+        mode: "{{ minio_tls_file_permissions }}"
+        owner: "{{ minio_certs_owner }}"
+        group: "{{ minio_group }}"
+      loop:
+        - "{{ minio_tls_private_key }}"
+
+- name: Install host-specific certificates and private keys from variables
+  when:
+    - minio_tls_hostspecific_public_certs | length > 0
+    - minio_tls_hostspecific_private_keys | length > 0
+  block:
+    - name: Install certificate public files to host-specific certs dirs
+      become: true
+      ansible.builtin.copy:
+        content: "{{ item.content }}"
+        dest: "{{ minio_certs_dir }}/{{ item.hostname }}/public.crt"
+        mode: "{{ minio_tls_file_permissions }}"
+        owner: "{{ minio_certs_owner }}"
+        group: "{{ minio_group }}"
+      loop: "{{ minio_tls_hostspecific_public_certs }}"
+    - name: Install certificate private keys to host-specific certs dirs
+      no_log: true
+      become: true
+      ansible.builtin.copy:
+        content: "{{ item.content }}"
+        dest: "{{ minio_certs_dir }}/{{ item.hostname }}/private.key"
+        mode: "{{ minio_tls_file_permissions }}"
+        owner: "{{ minio_certs_owner }}"
+        group: "{{ minio_group }}"
+      loop: "{{ minio_tls_hostspecific_private_keys }}"
+
+- name: Install CA certificates from variables to CA certs dir
+  become: true
+  ansible.builtin.copy:
+    content: "{{ item.content }}"
+    dest: "{{ minio_certs_dir }}/CAs/{{ item.filename }}"
+    mode: "{{ minio_tls_file_permissions }}"
+    owner: "{{ minio_certs_owner }}"
+    group: "{{ minio_group }}"
+  loop: "{{ minio_tls_cacerts }}"
+  when:
+    - minio_tls_cacerts | length > 0
+
+- name: Create symlinks to externally managed certificates
+  when:
+    - minio_tls_externally_managed_certs | length > 0
+  block:
+    - name: Install certificates symlinks to certs dir
+      become: true
+      ansible.builtin.file:
+        state: link
+        src: "{{ item.crt_src }}"
+        dest: "{{ minio_certs_dir }}/{{ item.crt_dst }}"
+      loop: "{{ minio_tls_externally_managed_certs }}"
+    - name: Install private key symlinks to certs dir
+      become: true
+      ansible.builtin.file:
+        state: link
+        src: "{{ item.key_src }}"
+        dest: "{{ minio_certs_dir }}/{{ item.key_dst }}"
+      loop: "{{ minio_tls_externally_managed_certs }}"
+
+- name: Manage symlinks to externally managed CA certificates
+  become: true
+  ansible.builtin.file:
+    state: link
+    src: "{{ item.ca_src }}"
+    dest: "{{ minio_certs_dir }}/CAs/{{ item.ca_dst }}"
+  loop: "{{ minio_tls_externally_managed_cacerts }}"
+  when:
+    - minio_tls_externally_managed_cacerts | length > 0

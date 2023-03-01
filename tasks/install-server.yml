@@ -18,10 +18,12 @@
     minio_server_opts: "--console-address {{ minio_console_addr }} {{ minio_server_opts }}"
   when: minio_console_addr | length > 1
 
-- name: "Append the MinIO config directory var to minio_server_opts"
+- name: "Append the MinIO certs directory var to minio_server_opts"
   set_fact:
-    minio_server_opts: "--config-dir {{ minio_config_dir }} {{ minio_server_opts }}"
-  when: minio_config_dir | length > 0
+    minio_server_opts: "--certs-dir {{ minio_certs_dir }} {{ minio_server_opts }}"
+  when:
+    - minio_certs_dir | length > 0
+    - minio_enable_tls
 
 - name: Create MinIO group
   group:
@@ -44,6 +46,9 @@
     mode: 0755
   when: minio_server_make_datadirs
   with_items: "{{ minio_server_datadirs }}"
+
+- include_tasks: server-tls-cert-setup.yml
+  when: minio_enable_tls
 
 - name: Download the MinIO server
   get_url:
@@ -89,15 +94,6 @@
     mode: 0750
   when: ansible_service_mgr != "systemd"
   notify: restart minio
-
-- name: Create the MinIO config dir
-  file:
-    path: "{{ minio_config_dir }}"
-    owner: "{{ minio_user }}"
-    group: "{{ minio_group }}"
-    state: directory
-    mode: 0755
-  when: minio_config_dir is defined
 
 - name: Enable and start the MinIO service
   service:

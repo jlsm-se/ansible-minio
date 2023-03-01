@@ -19,9 +19,6 @@ minio_group: minio
 # Path to the file containing the ENV variables for the MinIO server
 minio_server_envfile: /etc/default/minio
 
-# Directory to store minio config. Will default to minio_user/.minio if not defined
-minio_config_dir: "/etc/minio"
-
 # Minio server ip/fqdn and port. This makes up the server_addr below
 minio_server_ip: ""
 minio_server_port: "9000"
@@ -59,5 +56,89 @@ minio_root_password: "{{ minio_secret_key | default('minioadmin') }}"
 minio_install_server: true
 minio_install_client: true
 
-# TODO: in future
-minio_enable_ssl: false
+# Enable TLS
+minio_enable_tls: false
+
+# Directory to store minio certificates
+minio_certs_dir: "/etc/minio/certs"
+
+# Owner of the directory above the certs dir (default location /etc/minio)
+minio_certs_dir_basedir_owner: root
+
+# Owner of the certs dir
+minio_certs_dir_owner: "{{ minio_user }}"
+
+# Owner of the files in the certs dir
+minio_certs_owner: "{{ minio_user }}"
+
+minio_tls_directory_permissions: '0750'
+minio_tls_file_permissions: '0640'
+
+# Hostnames to set up for multiple domain-based TLS certificates (SNI)
+# Must match the hostnames in `minio_hostspecific_*` vars (or those part of the paths specified in in externally managed certs)
+minio_tls_hostnames: []
+#  - example1.lan
+#  - example2.lan
+
+minio_tls_public_cert: ""  # |
+#  -----BEGIN CERTIFICATE-----
+#  .....
+#  -----END CERTIFICATE-----
+
+minio_tls_private_key: ""  # |
+#  -----BEGIN PRIVATE KEY-----
+#  .....
+#  -----END PRIVATE KEY-----
+
+minio_tls_hostspecific_public_certs: []
+#  - hostname: example.lan
+#    content: |
+#      -----BEGIN CERTIFICATE-----
+#      .....
+#      -----END CERTIFICATE-----
+#  - hostname: example2.lan
+#    content: |
+#      -----BEGIN CERTIFICATE-----
+#      .....
+#      -----END CERTIFICATE-----
+
+minio_tls_hostspecific_private_keys: []
+#  - hostname: example.lan
+#    content: |
+#      -----BEGIN PRIVATE KEY-----
+#      .....
+#      -----END PRIVATE KEY-----
+#  - hostname: example2.lan
+#    content: |
+#      -----BEGIN PRIVATE KEY-----
+#      .....
+#      -----END PRIVATE KEY-----
+
+minio_tls_cacerts: []
+#  - filename: ca1.crt
+#    content: |
+#      -----BEGIN CERTIFICATE-----
+#      .....
+#      -----END CERTIFICATE-----
+#  - filename: ca2.crt
+#    content: |
+#      -----BEGIN CERTIFICATE-----
+#      .....
+#      -----END CERTIFICATE-----
+
+
+minio_tls_externally_managed_certs: []
+#  - crt_src: /usr/local/share/minio/certs/example1.crt
+#    key_src: /usr/local/share/minio/private/example1.key
+#    crt_dst: example1.lan/public.crt
+#    key_dst: example1.lan/private.key
+#  - crt_src: /usr/local/share/minio/certs/example2.crt
+#    key_src: /usr/local/share/minio/private/example2.key
+#    crt_dst: example2.lan/public.crt
+#    key_dst: example2.lan/private.key
+
+minio_tls_externally_managed_cacerts: []
+#  - ca_src: /usr/local/share/minio/CAs/ca1.crt
+#    ca_dst: ca1.crt
+#  - ca_src: /usr/local/share/minio/CAs/ca2.crt
+#    ca_dst: ca2.crt

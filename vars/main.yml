@@ -1,6 +1,6 @@
 ---
 # vars file for ansible-minio
-minio_connection_type: "{{ minio_enable_ssl | ternary('https', 'http') }}"
+minio_connection_type: "{{ minio_enable_tls | ternary('https', 'http') }}"
 
 go_arch_map:
   i386: '386'
