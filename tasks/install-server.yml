@@ -65,6 +65,7 @@
   notify: restart minio
 
 - name: Generate the MinIO server envfile
+  no_log: true
   template:
     src: minio.env.j2
     dest: "{{ minio_server_envfile }}"
