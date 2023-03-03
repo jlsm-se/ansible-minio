@@ -95,6 +95,9 @@
   when: ansible_service_mgr != "systemd"
   notify: restart minio
 
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
 - name: Enable and start the MinIO service
   service:
     name: minio
