@@ -1,0 +1,25 @@
+---
+- name: Verify
+  hosts: all
+  tasks:
+    - name: Populate service facts
+      service_facts:
+
+    - name: Assert that minio service is running
+      assert:
+        that: |
+          "'running' in ansible_facts.services['minio.service'].state"
+          or
+          "'running' in ansible_facts.services['minio'].state"
+
+    - name: Check MinIO WebUI
+      ansible.builtin.uri:
+        url: "https://localhost:9000/minio/login"
+        status_code: 200
+        headers:
+          User-Agent: "Mozilla/5.0"
+        validate_certs: false
+      register: login_page
+      until: login_page.status == 200
+      retries: 10
+      delay: 1

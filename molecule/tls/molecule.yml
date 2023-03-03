@@ -1,0 +1,175 @@
+---
+scenario:
+  name: tls
+
+dependency:
+  name: galaxy
+  options:
+    role-file: requirements.yml
+
+driver:
+  name: docker
+
+platforms:
+  - name: test-docker-centos7-minio
+    image: quay.io/minio/centos-systemd:7
+    privileged: true
+    pre_build_image: true
+    command: /sbin/init
+    published_ports:
+      - "0.0.0.0:9000:9000"
+      - "0.0.0.0:9001:9001"
+    tmpfs:
+      - /run
+      - /tmp
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    groups:
+      - rhel_family
+
+  - name: test-docker-ubuntu2004-minio
+    image: quay.io/minio/ubuntu-systemd:20.04
+    command: /sbin/init
+    privileged: true
+    pre_build_image: true
+    tmpfs:
+      - /run
+      - /tmp
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    groups:
+      - debian_family
+
+provisioner:
+  name: ansible
+  log: true
+  options:
+    diff: True
+    v: True
+  config_options:
+    defaults:
+      callback_whitelist: profile_tasks,timer
+  playbooks:
+    verify: ../resources/tests/verify-tls.yml
+  inventory:
+    group_vars:
+      all:
+        minio_enable_tls: true
+        minio_tls_hostnames:
+          - localhost
+        minio_tls_public_cert: |
+          -----BEGIN CERTIFICATE-----
+          MIIB1zCCAX6gAwIBAgIRALH4vSwfYCbrxzlP2gVz2KYwCgYIKoZIzj0EAwIwMzEc
+          MBoGA1UEChMTQ2VydGdlbiBEZXZlbG9wbWVudDETMBEGA1UECwwKamxzbUBwb29m
+          eTAeFw0yMzAyMjcxNDUzMjRaFw0yNDAyMjcxNDUzMjRaMDMxHDAaBgNVBAoTE0Nl
+          cnRnZW4gRGV2ZWxvcG1lbnQxEzARBgNVBAsMCmpsc21AcG9vZnkwWTATBgcqhkjO
+          PQIBBggqhkjOPQMBBwNCAAR6RTZIYaqp5YzfbubWs/dnMlruh2flsOKnIlaNdNMb
+          nwt24M0Rv7rTA0TCWZ8l6oMrtsX2ucYRDsZmfLn1ekSmo3MwcTAOBgNVHQ8BAf8E
+          BAMCAqQwEwYDVR0lBAwwCgYIKwYBBQUHAwEwDwYDVR0TAQH/BAUwAwEB/zAdBgNV
+          HQ4EFgQULzqn39hJ/tAyUzxWUvpKUGy3ocUwGgYDVR0RBBMwEYIJbG9jYWxob3N0
+          hwR/AAABMAoGCCqGSM49BAMCA0cAMEQCIGohf4yxSMtg5uut6cGvhEUolb7L73F6
+          rXsBbZ7ycw+QAiB5dlkw5Npi5BsoiERUzauU2AK6UcvWU4vvTMj0VJz7jg==
+          -----END CERTIFICATE-----
+        minio_tls_private_key: |
+          -----BEGIN PRIVATE KEY-----
+          MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgb21ltysvxul2Be8b
+          DPt8KvyB0bwy9fo2lq13jKRO8kuhRANCAAR6RTZIYaqp5YzfbubWs/dnMlruh2fl
+          sOKnIlaNdNMbnwt24M0Rv7rTA0TCWZ8l6oMrtsX2ucYRDsZmfLn1ekSm
+          -----END PRIVATE KEY-----
+        minio_tls_hostspecific_public_certs:
+          - hostname: localhost
+            content: |
+              -----BEGIN CERTIFICATE-----
+              MIIESzCCArOgAwIBAgIQHcUxdSm5JxhgnLe2G9+whjANBgkqhkiG9w0BAQsFADB5
+              MR4wHAYDVQQKExVta2NlcnQgZGV2ZWxvcG1lbnQgQ0ExJzAlBgNVBAsMHnZhZ3Jh
+              bnRAdWJ1bnR1MjAwNC5sb2NhbGRvbWFpbjEuMCwGA1UEAwwlbWtjZXJ0IHZhZ3Jh
+              bnRAdWJ1bnR1MjAwNC5sb2NhbGRvbWFpbjAeFw0yMzAzMDMxMjMzMzhaFw0yNTA2
+              MDMxMjMzMzhaMFIxJzAlBgNVBAoTHm1rY2VydCBkZXZlbG9wbWVudCBjZXJ0aWZp
+              Y2F0ZTEnMCUGA1UECwwedmFncmFudEB1YnVudHUyMDA0LmxvY2FsZG9tYWluMIIB
+              IjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyrqRhvQhfN8cc6cPtK+hwzqB
+              hwM8orgdH2VEc2Xfl/QMcdjAHMhHqXTHzOuSDU9IP/xJeuEza1kep9CO7k0j5rPc
+              ing3AEYKUdkatJytiknIr7h+Y/hgY8Y44HJRyNVYGYT3UG8iKNfQgVjBgxXaQytM
+              vuQ5nGUZE7Bh12IjdCQBvG8G0GSZ9AP8ImGggckddeOnf+0LDPqCfQcaD3tu7DLA
+              ojgpCLUkPH23uDmJnCbN6D3A/+qUYcDOgPRkVI+ZwtzfL4hvB5SRje6v29oa6vTb
+              A+eM/76nYFUdvRygD6ZlI+E1Jk84NZszXmXu5O46le55r8n+3fb3K7i8XEgHwQID
+              AQABo3YwdDAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYBBQUHAwEwHwYD
+              VR0jBBgwFoAU8brXvr84wb7LDUdYwuRbHDGQI8gwLAYDVR0RBCUwI4IJbG9jYWxo
+              b3N0hwR/AAABhxAAAAAAAAAAAAAAAAAAAAABMA0GCSqGSIb3DQEBCwUAA4IBgQCI
+              22klWZglzog7yn1Rz0tOl9lcMUKLIlOeJIVCdDSGwdE67LRZ/Bx8TyzervdmPhvg
+              fQDOWC82vMY76H7Mx3mLLWSbY/JrQSuzp54CedMxdHdFnEc5R3aiD0cO6YqgJfhV
+              Bst1hG+XvoJ2rRtqY5uHlltpPn9Vdd7+FUB2QbO4ArLMelV4vjNbCjFOblrvs5Va
+              KGLg3EyYcn6YKF/seEyaXnYNvxKEETbDedXYA1StDV4FL57t7qOz2oH5h+dcYKSS
+              5XFPt4qkuaONuZi8BiTAiH8zdgwh3MpKvF5F4kV4FHeZ2XvViiV9XeqCAqC+zz/i
+              d/L9oCVCmEh3fx/eu9fKh8LCagzt3zKMrSt9kEYan146T3gikLddDt3o88BLS8bJ
+              MZ4ejfFS+FsYyEcuzu/t80ikWikg6OPYIbp1t22XXBYBl0YTVhZLWGVv3HH1ZbEl
+              NRg32I0ejnKNa06ZKHp91E0PqTm8R6VUhdYyyaWqGQR7adfU6Tlg1t3v67GUGrw=
+              -----END CERTIFICATE-----
+        minio_tls_hostspecific_private_keys:
+          - hostname: localhost
+            content: |
+              -----BEGIN PRIVATE KEY-----
+              MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDKupGG9CF83xxz
+              pw+0r6HDOoGHAzyiuB0fZURzZd+X9Axx2MAcyEepdMfM65INT0g//El64TNrWR6n
+              0I7uTSPms9yKeDcARgpR2Rq0nK2KScivuH5j+GBjxjjgclHI1VgZhPdQbyIo19CB
+              WMGDFdpDK0y+5DmcZRkTsGHXYiN0JAG8bwbQZJn0A/wiYaCByR1146d/7QsM+oJ9
+              BxoPe27sMsCiOCkItSQ8fbe4OYmcJs3oPcD/6pRhwM6A9GRUj5nC3N8viG8HlJGN
+              7q/b2hrq9NsD54z/vqdgVR29HKAPpmUj4TUmTzg1mzNeZe7k7jqV7nmvyf7d9vcr
+              uLxcSAfBAgMBAAECggEAR4MUfrRzc6cIVEukIKqrt0BWHJgptYSY0VBZmxNeki2G
+              jkpVSlHj5YTKTiDy/jrvU5LdILl79+wSAkRxhuIzPdhIfZf2XuRWE5Uv9HIoTVXF
+              syazfvRInCl6OsJY0y1ezHG5A+iP9jRa2qXCbUkyGuuVQOkk4WRQOj/H48A8nWTN
+              FS2qx1BFypHwCfNkMdwivHWSB0BKHnyaGt6YZRDdfxrNoOVG/VllOv/scVoYplYn
+              l+ZSYjfaAsU7A8C/+mDTRNXilFghMqBRs0jc8XUSK2XU+wdX/fA8L8K/vQ1c2Xtz
+              MJ6xaa30ULKKm/U5QaiEmnBwTmZCWTJHTrl0bO6LmQKBgQD0EB3qaN9ssLXr3Bkk
+              nR5XgpX+hLPKZoZ22YMSSdXNwgHdcrUtlkflexMHfB5+7KEHKcZmwL/dxPKl2dKI
+              J4SGbzVdv/UmK5ZJtQaSVgK9elxtcNZ3YgY2IgAnAoT60U0makL1GSP9ewCVltv1
+              USaQ2sr9lIfb4P05A/vNpHquOwKBgQDUpOlOqvJqu/z/d00iHdj86cx98K2Tq/AV
+              68CWzX7MmIwgP7ahgAVYkykYLglB6oOP+ShIojqXImfoSDY3Y1E4P/83FcKpompx
+              tcC2fYOFCK43ezuS3eDna9WIuchqMIwtHgNOxnWwQdNX1TpR6bEMOzoLaXnlKLtI
+              MBnqgXbWMwKBgQDbzugihfEzYrN1iPTcFOWOyv1sDPggAdZ4k82IWxdECMbFOtoS
+              BJccBoxM4WxVw6gDW4xkXpRul0IyPMtv9KdWrDHUDV4s0nS4TWFtyikNnXZA2q9N
+              NeuCNX0NpSc+/eIOBwXm2I2hbXZJQ2U2u6+QJn1LhMoXLbrh7sSJoOkcoQKBgQCo
+              ezl34S5Nr0EX0JjGzUtdqIkjyAxfkr2ZQL/JPGyZAs0TyCeV8m9J7N+EjwU6uuse
+              qdVnJ1Kw6MvXWU/Ltt9laB94r78a1Nrt2YoljXEleOlAgF2FUlOeSOxZdon6yRhn
+              rv4D7m7VBnLDhui8eiKThGHLJPk1vn4VBjeifI2BzQKBgQDTdsyuSpsjGh6GcFZa
+              XPNcw4qZJwfT1TBPGpv/f20OyrSxj8MflgVPnDCakp9uqlLxD7gh3h9U19907PK2
+              bhDT2DZDmetm2YsZe3T03v14za83jR6L4AYMeuW2A8yOI+uXHw95lnZlljPEIJcT
+              vQ/OmKksWUspGTZioNlcUWZZZg==
+              -----END PRIVATE KEY-----
+        minio_tls_cacerts:
+          - filename: localhost-ca.crt
+            content: |
+              -----BEGIN CERTIFICATE-----
+              MIIEwTCCAymgAwIBAgIQecABhOVkk/NF+lFUQ5BghjANBgkqhkiG9w0BAQsFADB5
+              MR4wHAYDVQQKExVta2NlcnQgZGV2ZWxvcG1lbnQgQ0ExJzAlBgNVBAsMHnZhZ3Jh
+              bnRAdWJ1bnR1MjAwNC5sb2NhbGRvbWFpbjEuMCwGA1UEAwwlbWtjZXJ0IHZhZ3Jh
+              bnRAdWJ1bnR1MjAwNC5sb2NhbGRvbWFpbjAeFw0yMzAzMDMxMDE4NTdaFw0zMzAz
+              MDMxMDE4NTdaMHkxHjAcBgNVBAoTFW1rY2VydCBkZXZlbG9wbWVudCBDQTEnMCUG
+              A1UECwwedmFncmFudEB1YnVudHUyMDA0LmxvY2FsZG9tYWluMS4wLAYDVQQDDCVt
+              a2NlcnQgdmFncmFudEB1YnVudHUyMDA0LmxvY2FsZG9tYWluMIIBojANBgkqhkiG
+              9w0BAQEFAAOCAY8AMIIBigKCAYEAw8RJnHIlictLLEP4w4hxhRh4CTECEd8cFshM
+              RkbUL2ji3JMeFpOIl/wBM5TmmEkiVCcFoPJMxQRLYp4PKBNAckmf/WCvefdp9Qxr
+              xi2XfaUZHkFcCLIeGYpxogz1nl95T/yX/Yf//M4TA2hwyNWLCIid2/T1Un7vsRpi
+              1lA2tyN5IzP6A18CwC/1eg8sJtq8yRzMXG5kRF9sqPvJvXGiGaV1lIPqc0zgJNtG
+              xIiEQZAIiWIOMqSvF47ZtA1FDv8sO2pY/6qbrSifjMT51iO3aZECQr1qBWEzDzjC
+              GmR/WWld6kum19GWYBvyzHkqiTcggUTiFBhKbPJnZ38L9TrIXXCuhYNIUgWeVO2K
+              1PiIavdG5CunIHaamn9MRjCjoHWFKVwdS9nm/t5dFQzA2AZvNf1XiDsVNcPbyOwL
+              7cMI7kf/o8ayIJFoHn0+9Xmjn/64P/2S+ftkp3ameXNLgbbgjagCM5QcQbmAmF0Y
+              feuFoMqxKUtfc6pd1fNV09BkDfIvAgMBAAGjRTBDMA4GA1UdDwEB/wQEAwICBDAS
+              BgNVHRMBAf8ECDAGAQH/AgEAMB0GA1UdDgQWBBTxute+vzjBvssNR1jC5FscMZAj
+              yDANBgkqhkiG9w0BAQsFAAOCAYEAXRBq+5rojRjFURJq6C+yIBBhrntQXCGE9Ojb
+              F7DHba+z3O1WSdi6tDd1GJbrgi1q96a7PWeBNB47ao2gN3ivzI6Su8VR9oSka0FH
+              CZv2uhdyUWj3CFu485oexk2eznDkfdeLI7qA1ZNCi6HxOg59NOOqjMRCLz6Vu1xV
+              hTlBIRjCvsMhPkEeVyR8g9h37L/vcxYWvzD2xqgPECaK9oRd1nllwZUvGnzGx4b8
+              xBoMAVu/WFwkF/3ecM3a9MssZViL2eOwMv3QIvFZaF5DIKOzwGNILmOLhzB8awvJ
+              STK5qWflyTQsbjBlBTq4X5nEXKV+Qxi8WADNqKscrm4Rmbr7MJraEwHmxXFKz76H
+              1LmhlMrjiCI0i39CPsFsLHlERNA0SENVHv0zZSPnx5fQkL0Ln8Kv9d/RO6/qs06O
+              ODO/cqhRpktOsrXzMcC8QANINCtvzp5GN255Q1dMR6Vg/wN4qSRqD+tMZ1A8kp8B
+              3Z12+4IQKv6OFYA44v91hehbMKkx
+              -----END CERTIFICATE-----
+
+lint: |
+  set -e
+  yamllint .
+
+verifier:
+  name: ansible

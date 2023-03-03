@@ -30,3 +30,4 @@ jobs:
           ansible-lint -x fqcn-builtins,var-spacing -c .ansible-lint
 
           molecule test -s default
+          molecule test -s tls
